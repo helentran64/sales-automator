@@ -44,7 +44,7 @@ label{
     width: 80%;
     margin-left: auto;
     margin-right: auto;
-    margin-bottom: 30px;
+    margin-bottom: 60px;
 }
 
 #barForm, #calculation{
@@ -54,12 +54,12 @@ label{
     width: 60%;
 }
 
-#submitButton{
+#submitButton, #resetButton{
     text-align: center;
     margin-top: 35px;
 }
 
-#button{
+.button{
     background-image: linear-gradient(92.88deg, #455EB5 9.16%, #5643CC 43.89%, #673FD7 64.72%);
     border-radius: 8px;
     border-style: none;
@@ -100,8 +100,17 @@ table{
     height: 200px;
 }
 
+.resetNote{
+    text-align: center;
+    padding: 10px;
+}
+
+.italic{
+    font-style: italic;
+}
+
 footer{
-    margin-top: 100px;
+    margin-top: 200px;
     margin-bottom: 10px;
     text-align: center;
     font-size: 14px;

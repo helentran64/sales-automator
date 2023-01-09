@@ -70,42 +70,24 @@
     <div class="box">
         <div id="barForm">
             <form action="" method="post">
-                <label for="pint">(&dollar;8) Draft Pint: </label>
-                <input type="number" id="pint" name="pint">
-                <br>
-                <label for="domestic">(&dollar;7) Domestic bottle: </label>
-                <input type="number" id="domestic" name="domestic">
-                <br>
-                <label for="nonalc">(&dollar;6) Non-alcoholic: </label>
-                <input type="number" id="nonalc" name="nonalc">
-                <br>
-                <label for="liquor">(&dollar;10) Liquor: </label>
-                <input type="number" id="liquor" name="liquor">
-                <br>
-                <label for="hwine">(&dollar;10) House wine: </label>
-                <input type="number" id="hwine" name="hwine">
-                <br>
-                <label for="pwine">(&dollar;12) Premium wine: </label>
-                <input type="number" id="pwine" name="pwine">
-                <br>
-                <label for="malt10">(&dollar;20) Single malt (10 years): </label>
-                <input type="number" id="malt10" name="malt10">
-                <br>
-                <label for="malt15">(&dollar;25) Single malt (15 years): </label>
-                <input type="number" id="malt15" name="malt15">
-                <br>
-                <label for="juice">(&dollar;6) Juice: </label>
-                <input type="number" id="juice" name="juice">
-                <br>
-                <label for="pop">(&dollar;4) Pop: </label>
-                <input type="number" id="pop" name="pop">
-                <br>
-                <hr>
-                <label for="amountReceived">Amount received: </label>
-                <input type="number" id="amountReceived" name="amountReceived">
-                <br>
+                <?php
+                    $prices = array(8, 7, 6, 10, 10, 12, 20, 25, 6, 4);
+                    $drinkNames = array("Draft Pint", "Domestic bottle", "Non-alcoholic",
+                    "Liquor", "House wine", "Premium wine", "Single malt (10 years)", 
+                    "Single malt (15 years)", "Juice", "Pop");
+                    $idAndName = array("pint", "domestic", "nonalc", "liquor", "hwine",
+                    "pwine", "malt10", "malt15", "juice", "pop");
+
+                    for ($i = 0; $i < count($prices); $i++){
+                        echo "<label for='" . $idAndName[$i] . "'>(&dollar;" . $prices[$i] . ") " . $drinkNames[$i] . ": </label>";
+                        echo "<input type='number' id='" . $idAndName[$i] . "' name='" . $idAndName[$i] . "'></br>";
+                    }
+                    echo "<hr>";
+                    echo "<label for='amountReceived'>Amount received: </label>";
+                    echo "<input type='number' id='amountReceived' name='amountReceived'><br>";
+                ?>
                 <div id="submitButton">
-                    <input type="submit" id="button" name="submit" value="Submit">
+                    <input type="submit" class="button" name="submit" value="Submit">
                 </div>
             </form>
         </div>
@@ -113,70 +95,79 @@
             <?php
                 $costPint = 8;
                 $costDomestic = 7;
-                $costNonAlc = 6;
-                $costLiquor = 10;
-                $costHWine = 10;
+                $costNonAlc = $costJuice = 6;
+                $costLiquor = $costHWine = 10;
                 $costPWine = 12;
                 $costSingleMalt10 = 20;
                 $costSingleMalt15 = 25;
-                $costJuice = 6;
                 $costPop = 4;
-                $sumTotal = 0;
-                $sumTotalSales = 0;
+                $sumTotal = $sumTotalSales = 0;
 
                 if (isset($_POST['submit'])) {
-                    if ($_POST['pint'] != ""){
-                        $currentCost = $costPint * $_POST['pint'];
-                        $sumPint += $currentCost;
-                        $sumTotal += $sumPint;
+                    //Getting the total amount that the customer paid
+                    $total = ($_POST['pint'] * 8) + ($_POST['domestic'] * 7) + ($_POST['nonalc'] * 6) +
+                    ($_POST['liquor'] * 10) + ($_POST['hwine'] * 10) + ($_POST['pwine'] * 12) + ($_POST['malt10'] * 20) +
+                    ($_POST['malt15'] * 25) + ($_POST['juice'] * 6) + ($_POST['pop'] * 4);
+
+                    //validating if payment was sufficient
+                    if ($_POST['amountReceived'] >= $total) {
+                        if ($_POST['pint'] != ""){
+                            $currentCost = $costPint * $_POST['pint'];
+                            $sumPint += $currentCost;
+                            $sumTotal += $sumPint;
+                        }
+                        if ($_POST['domestic'] != ""){
+                            $currentCost = $costDomestic * $_POST['domestic'];
+                            $sumDomestic += $currentCost;
+                            $sumTotal += $sumDomestic;
+                        }
+                        if ($_POST['nonalc'] != ""){
+                            $currentCost = $costNonAlc * $_POST['nonalc'];
+                            $sumNonAlc += $currentCost;
+                            $sumTotal += $sumNonAlc;
+                        }
+                        if ($_POST['liquor'] != ""){
+                            $currentCost = $costLiquor * $_POST['liquor'];
+                            $sumLiquor += $currentCost;
+                            $sumTotal += $sumLiquor;
+                        }
+                        if ($_POST['hwine'] != ""){
+                            $currentCost = $costHWine * $_POST['hwine'];
+                            $sumHWine += $currentCost;
+                            $sumTotal += $sumHWine;
+                        }
+                        if ($_POST['pwine'] != ""){
+                            $currentCost = $costPWine * $_POST['pwine'];
+                            $sumPWine += $currentCost;
+                            $sumTotal += $sumPWine;
+                        }
+                        if ($_POST['malt10'] != ""){
+                            $currentCost = $costSingleMalt10 * $_POST['malt10'];
+                            $sumSingleMalt10 += $currentCost;
+                            $sumTotal += $sumSingleMalt10;
+                        }
+                        if ($_POST['malt15'] != ""){
+                            $currentCost = $costSingleMalt15 * $_POST['malt15'];
+                            $sumSingleMalt15 += $currentCost;
+                            $sumTotal += $sumSingleMalt15;
+                        }
+                        if ($_POST['juice'] != ""){
+                            $currentCost = $costJuice * $_POST['juice'];
+                            $sumJuice += $currentCost;
+                            $sumTotal += $sumJuice;
+                        }
+                        if ($_POST['pop'] != ""){
+                            $currentCost = $costPop * $_POST['pop'];
+                            $sumPop += $currentCost;
+                            $sumTotal += $sumPop;
+                        }
+                        $diffPayment = $_POST['amountReceived'] - $sumTotal;
+                        echo "<p style='color: green'>Change: $" . $diffPayment . "</p>";
                     }
-                    if ($_POST['domestic'] != ""){
-                        $currentCost = $costDomestic * $_POST['domestic'];
-                        $sumDomestic += $currentCost;
-                        $sumTotal += $sumDomestic;
+                    else{
+                        $diffPayment = $_POST['amountReceived'] - $total;
+                        echo "<p style='color: red'>Payment insufficient by $" . $diffPayment . "</p>";
                     }
-                    if ($_POST['nonalc'] != ""){
-                        $currentCost = $costNonAlc * $_POST['nonalc'];
-                        $sumNonAlc += $currentCost;
-                        $sumTotal += $sumNonAlc;
-                    }
-                    if ($_POST['liquor'] != ""){
-                        $currentCost = $costLiquor * $_POST['liquor'];
-                        $sumLiquor += $currentCost;
-                        $sumTotal += $sumLiquor;
-                    }
-                    if ($_POST['hwine'] != ""){
-                        $currentCost = $costHWine * $_POST['hwine'];
-                        $sumHWine += $currentCost;
-                        $sumTotal += $sumHWine;
-                    }
-                    if ($_POST['pwine'] != ""){
-                        $currentCost = $costPWine * $_POST['pwine'];
-                        $sumPWine += $currentCost;
-                        $sumTotal += $sumPWine;
-                    }
-                    if ($_POST['malt10'] != ""){
-                        $currentCost = $costSingleMalt10 * $_POST['malt10'];
-                        $sumSingleMalt10 += $currentCost;
-                        $sumTotal += $sumSingleMalt10;
-                    }
-                    if ($_POST['malt15'] != ""){
-                        $currentCost = $costSingleMalt15 * $_POST['malt15'];
-                        $sumSingleMalt15 += $currentCost;
-                        $sumTotal += $sumSingleMalt15;
-                    }
-                    if ($_POST['juice'] != ""){
-                        $currentCost = $costJuice * $_POST['juice'];
-                        $sumJuice += $currentCost;
-                        $sumTotal += $sumJuice;
-                    }
-                    if ($_POST['pop'] != ""){
-                        $currentCost = $costPop * $_POST['pop'];
-                        $sumPop += $currentCost;
-                        $sumTotal += $sumPop;
-                    }
-                    $diffPint = $_POST['amountReceived'] - $sumTotal;
-                    echo "<p style='color: green'>Change: $" . $diffPint . "</p>";
                 }
             ?>
         </div>
@@ -187,15 +178,11 @@
             <tr>
                 <th> </th>
                 <th>Pint</th>
-                <th>Domestic Bottle</th>
-                <th>Non-alcoholic</th>
-                <th>Liquor</th>
-                <th>House wine</th>
-                <th>Premium wine</th>
-                <th>Single malt (10 years)</th>
-                <th>Single malt (15 years)</th>
-                <th>Juice</th>
-                <th>Pop</th>
+                <?php
+                    for ($i = 1; $i < count($drinkNames); $i++){
+                        echo "<th>" . $drinkNames[$i] . "</th>";
+                    }
+                ?>
             </tr>
             <tr>
                 <th>Amount &dollar;</th>
@@ -301,31 +288,20 @@
                         $_COOKIE[$cookie_pop] = $sumPop;
                     }
 
-                    echo "<td>" . $sumPint . "</td>";
-                    echo "<td>" . $sumDomestic . "</td>";
-                    echo "<td>" . $sumNonAlc . "</td>";
-                    echo "<td>" . $sumLiquor . "</td>";
-                    echo "<td>" . $sumHWine . "</td>";
-                    echo "<td>" . $sumPWine . "</td>";
-                    echo "<td>" . $sumSingleMalt10 . "</td>";
-                    echo "<td>" . $sumSingleMalt15 . "</td>";
-                    echo "<td>" . $sumJuice . "</td>";
-                    echo "<td>" . $sumPop . "</td>";
+                    $drinkSums = array($sumPint, $sumDomestic, $sumNonAlc, $sumLiquor, 
+                    $sumHWine, $sumPWine, $sumSingleMalt10, $sumSingleMalt15, $sumJuice, $sumPop);
+
+                    foreach($drinkSums as $value){
+                        echo "<td>" . $value . "</td>";
+                    }
                 ?>
             </tr>
             <tr>
                     <th>Quantity</th>
                     <?php
-                    echo "<td>" . $sumPint/8 . "</td>";
-                    echo "<td>" . $sumDomestic/7 . "</td>";
-                    echo "<td>" . $sumNonAlc/6 . "</td>";
-                    echo "<td>" . $sumLiquor/10 . "</td>";
-                    echo "<td>" . $sumHWine/10 . "</td>";
-                    echo "<td>" . $sumPWine/12 . "</td>";
-                    echo "<td>" . $sumSingleMalt10/20 . "</td>";
-                    echo "<td>" . $sumSingleMalt15/25 . "</td>";
-                    echo "<td>" . $sumJuice/6 . "</td>";
-                    echo "<td>" . $sumPop/4 . "</td>";
+                        for ($i = 0; $i < count($prices); $i++){
+                            echo "<td>" . $drinkSums[$i]/$prices[$i] . "</td>";
+                        }
                     ?>
             </tr>
         </table>
@@ -340,9 +316,33 @@
                 setcookie($cookie_sales, $sumTotalSales);
                 $_COOKIE[$cookie_sales] = $sumTotalSales;
             }
-            echo "<p style='text-align:center;'> Total: " . $sumTotalSales . "</p>";
+            echo "<p style='text-align:center;font-weight:600;'> Total amount: $" . $sumTotalSales . "</p>";
         ?>
     </div>
+    <form action="" method="post">
+        <div id="resetButton">
+            <input type="submit" class="button" id="reset" name="reset" value="Reset" onclick=countClicks()>
+        </div>
+    </form>
+
+    <?php
+        if (isset($_POST['reset'])) {
+            setcookie($cookie_draft, 0);
+            setcookie($cookie_domestic, 0);
+            setcookie($cookie_nonAlc, 0);
+            setcookie($cookie_liquor, 0);
+            setcookie($cookie_hwine, 0);
+            setcookie($cookie_pwine, 0);
+            setcookie($cookie_singlemalt10, 0);
+            setcookie($cookie_singlemalt15, 0);
+            setcookie($cookie_juice, 0);
+            setcookie($cookie_pop, 0);
+            setcookie($cookie_sales, 0);
+        }
+        echo "<p class='resetNote'>Please click the Reset button <span class='italic'>twice</span> to comfirm data reset</p>";
+        echo "<p id='count'></p>"
+
+    ?>
     <footer>
         <p>&copy; Built and Designed by Helen Tran</p>
     </footer>
