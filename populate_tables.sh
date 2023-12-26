@@ -1,6 +1,6 @@
 #!/bin/sh
 #export LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client64/lib
-sqlplus64 "h10tran/01013866@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=oracle.scs.ryerson.ca)(Port=1521))(CONNECT_DATA=(SID=orcl)))"<<EOF
+sqlplus64 "user/pass@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=oracle.scs.ryerson.ca)(Port=1521))(CONNECT_DATA=(SID=orcl)))"<<EOF
 
 INSERT INTO drink VALUES (0, 'pint', 'Draft Pint', 8); 
 INSERT INTO drink VALUES (1, 'domestic', 'Domestic bottle', 7); 

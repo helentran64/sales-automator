@@ -47,12 +47,15 @@ function updatedDrinkQuantity(){
         <div id="barForm">
             <form id="submit" action="" method="post">
                 <?php
+                    // Creating the drink menu form
                     $idAndName = array("pint", "domestic", "nonalc", "liquor", "hwine",
                     "pwine", "malt10", "malt15", "juice", "pop");
                     $sql = "SELECT * FROM drink";
                     $stid = oci_parse($conn, $sql);
                     $result = oci_execute($stid);
                     $i = 0;
+
+                    // Display the label for each drink and its price
                     if ($result){
                         while ($row = oci_fetch_array($stid, OCI_RETURN_NULLS+OCI_ASSOC)){
                             echo "<label for='" . $idAndName[$i] . "'>(&dollar;" . $row['PRICE'] . ") " . $row['DRINKNAME'] . ": </label>";
@@ -66,6 +69,7 @@ function updatedDrinkQuantity(){
                         echo htmlentities($e['message']);
                     }    
                     echo "<hr>";
+                    // Inserting field to enter the amount received by the customer
                     echo "<label for='amountReceived'>Amount received: </label>";
                     echo "<input type='number' id='amountReceived' name='amountReceived'><br>";
                 ?>
@@ -78,6 +82,8 @@ function updatedDrinkQuantity(){
             <?php
                 $sumTotal = $sumTotalSales = 0;
                 $prices = [];
+
+                // Retrieve all drink prices from the database and store it in the array
                 $getPrices = "SELECT price FROM drink";
                 $stid = oci_parse($conn, $getPrices);
                 $result = oci_execute($stid);
@@ -92,6 +98,7 @@ function updatedDrinkQuantity(){
 
                 $drinkNamesVar = ["costPint", "costDomestic", "costNonAlc", "costLiquor", "costHWine", "costPWine", "costSingleMalt10", "costSingleMalt15", "costJuice", "costPop"];
 
+                // Assign the price to each drink
                 for ($i = 0; $i < count($drinkNamesVar); $i++) {
                     ${$drinkNamesVar[$i]} = $prices[$i];
                 }
@@ -133,10 +140,12 @@ function updatedDrinkQuantity(){
                             // Execute the prepared statement
                             $result = oci_execute($stid);
                         }
+                        // Display the difference after subtracting the amount received from the total cost
                         $diffPayment = $_POST['amountReceived'] - $total;
                         echo "<p style='color: green'>Change: $" . $diffPayment . "</p>";
                     }
                     else{
+                            // Display what the customer owes 
                             $diffPayment = $_POST['amountReceived'] - $total;
                             echo "<p style='color: red'>Payment insufficient by: $" . $diffPayment . "</p>";
                     }
@@ -150,6 +159,7 @@ function updatedDrinkQuantity(){
             <tr>
                 <th> </th>
                 <?php
+                    // Display all the drink names
                     $drinkNames = ["Pint", "Domestic", "NonAlc", "Liquor", "Hwine", "PWine", "SingleMalt10", "SingleMalt15", "Juice", "Pop"];
                     for ($i = 0; $i < count($drinkNames); $i++){
                         echo "<th>" . $drinkNames[$i] . "</th>";
@@ -159,7 +169,6 @@ function updatedDrinkQuantity(){
             <tr>
                 <th>Amount &dollar;</th>
                 <?php
-                    
                     $drinksAmount = updatedDrinkQuantity();
                     $sumDrinks = [];
                     // Display the amount of drinks sold
@@ -183,6 +192,7 @@ function updatedDrinkQuantity(){
         </table>
 
         <?php
+            // Display the total sales
             $sumTotalSales = array_sum($sumDrinks);
             echo "<p style='text-align:center;font-weight:600;'> Total amount: $" . $sumTotalSales . "</p>";
         ?>
@@ -194,6 +204,7 @@ function updatedDrinkQuantity(){
     </form>
 
     <?php
+        // If the reset button was clicked, it will reset the quantity sold for each drink to 0
         if (isset($_POST['reset'])) {
             $sql = "UPDATE drinkTransaction SET Quantity = 0";
             $stid = oci_parse($conn, $sql);
