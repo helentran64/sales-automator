@@ -1,51 +1,27 @@
-<?php 
-    session_start();
-    //draft
-    $cookie_draft = "draft";
-    $cookie_draft_value = 8;
-    setcookie($cookie_draft, $cookie_draft_value, time() + 86400);
-    //domestic
-    $cookie_domestic = "domestic";
-    $cookie_domestic_value = 7;
-    setcookie($cookie_domestic, $cookie_domestic_value, time() + 86400);
-    //non-alcoholic drink
-    $cookie_nonAlc = "nonAlcoholic";
-    $cookie_nonAlc_value = 6;
-    setcookie($cookie_nonAlc, $cookie_nonAlc_value, time() + 86400);
-    //liquor
-    $cookie_liquor = "liquor";
-    $cookie_liquor_value = 10;
-    setcookie($cookie_liquor, $cookie_liquor_value, time() + 86400);
-    //House wine
-    $cookie_hwine = "housewine";
-    $cookie_hwine_value = 10;
-    setcookie($cookie_hwine, $cookie_hwine_value, time() + 86400);
-    //Premium wine
-    $cookie_pwine = "premiumwine";
-    $cookie_pwine_value = 12;
-    setcookie($cookie_pwine, $cookie_pwine_value, time() + 86400);
-    //Single Malt 10
-    $cookie_singlemalt10 = "singlemalt10";
-    $cookie_singlemalt10_value = 20;
-    setcookie($cookie_singlemalt10, $cookie_singlemalt10_value, time() + 86400);
-    //Single Malt 15
-    $cookie_singlemalt15 = "singlemalt15";
-    $cookie_singlemalt15_value = 25;
-    setcookie($cookie_singlemalt15, $cookie_singlemalt15_value, time() + 86400);
-    //Juice
-    $cookie_juice = "juice";
-    $cookie_juice_value = 6;
-    setcookie($cookie_juice, $cookie_juice_value, time() + 86400);
-    //Pop
-    $cookie_pop = "pop";
-    $cookie_pop_value = 4;
-    setcookie($cookie_pop, $cookie_pop_value, time() + 86400);
-    //Total sales
-    $cookie_sales = "sales";
-    $cookie_sales_value = 0;
-    setcookie($cookie_sales, $cookie_sales_value, time() + 86400);
-?>
+<?php include ('db.php'); ?>
 
+<?php 
+function updatedDrinkQuantity(){
+    $conn = oci_connect('user', 'pass', '(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(Host=oracle.scs.ryerson.ca)(Port=1521))(CONNECT_DATA=(SID=orcl)))'); 
+    if (!$conn) { $m = oci_error(); 
+        echo $m['message']; 
+    } 
+    // Get the updated quantity from the database
+    $drinkQuantities = [];
+    $getUpdatedQuantity = "SELECT Quantity FROM drinkTransaction";
+    $stid = oci_parse($conn, $getUpdatedQuantity);
+    $result = oci_execute($stid);
+
+    // Store results into the resultUpdatedQuantity array
+    if ($result) {
+        while ($row = oci_fetch_array($stid, OCI_RETURN_NULLS+OCI_ASSOC)) {
+            array_push($drinkQuantities, $row['QUANTITY']);
+        }
+    }
+    return $drinkQuantities;
+}
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,7 +30,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales</title>
     <link rel="icon" href="./Images/favicon.ico">
-    <link rel="stylesheet" href="./stylesheet.css">
+    <link rel="stylesheet" href="./style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -69,19 +45,26 @@
     </header>
     <div class="box">
         <div id="barForm">
-            <form action="" method="post">
+            <form id="submit" action="" method="post">
                 <?php
-                    $prices = array(8, 7, 6, 10, 10, 12, 20, 25, 6, 4);
-                    $drinkNames = array("Draft Pint", "Domestic bottle", "Non-alcoholic",
-                    "Liquor", "House wine", "Premium wine", "Single malt (10 years)", 
-                    "Single malt (15 years)", "Juice", "Pop");
                     $idAndName = array("pint", "domestic", "nonalc", "liquor", "hwine",
                     "pwine", "malt10", "malt15", "juice", "pop");
-
-                    for ($i = 0; $i < count($prices); $i++){
-                        echo "<label for='" . $idAndName[$i] . "'>(&dollar;" . $prices[$i] . ") " . $drinkNames[$i] . ": </label>";
-                        echo "<input type='number' id='" . $idAndName[$i] . "' name='" . $idAndName[$i] . "'></br>";
+                    $sql = "SELECT * FROM drink";
+                    $stid = oci_parse($conn, $sql);
+                    $result = oci_execute($stid);
+                    $i = 0;
+                    if ($result){
+                        while ($row = oci_fetch_array($stid, OCI_RETURN_NULLS+OCI_ASSOC)){
+                            echo "<label for='" . $idAndName[$i] . "'>(&dollar;" . $row['PRICE'] . ") " . $row['DRINKNAME'] . ": </label>";
+                            echo "<input type='number' id='" . $idAndName[$i] . "' name='" . $idAndName[$i] . "'></br>";
+                            $i++;
+                        }
                     }
+                    else{
+                        echo "No results. <br>";
+                        $e = oci_error($stid);
+                        echo htmlentities($e['message']);
+                    }    
                     echo "<hr>";
                     echo "<label for='amountReceived'>Amount received: </label>";
                     echo "<input type='number' id='amountReceived' name='amountReceived'><br>";
@@ -93,80 +76,69 @@
         </div>
         <div id="calculation">
             <?php
-                $costPint = 8;
-                $costDomestic = 7;
-                $costNonAlc = $costJuice = 6;
-                $costLiquor = $costHWine = 10;
-                $costPWine = 12;
-                $costSingleMalt10 = 20;
-                $costSingleMalt15 = 25;
-                $costPop = 4;
                 $sumTotal = $sumTotalSales = 0;
+                $prices = [];
+                $getPrices = "SELECT price FROM drink";
+                $stid = oci_parse($conn, $getPrices);
+                $result = oci_execute($stid);
+                if($result){
+                    while ($row = oci_fetch_array($stid, OCI_RETURN_NULLS+OCI_ASSOC)){
+                        array_push($prices, $row["PRICE"]);
+                    }
+                }
+                else{
+                    echo "failed";
+                }
 
+                $drinkNamesVar = ["costPint", "costDomestic", "costNonAlc", "costLiquor", "costHWine", "costPWine", "costSingleMalt10", "costSingleMalt15", "costJuice", "costPop"];
+
+                for ($i = 0; $i < count($drinkNamesVar); $i++) {
+                    ${$drinkNamesVar[$i]} = $prices[$i];
+                }
+
+                // Retrieving quantity of the current drink from the database
+                $drinkQuantities = [];
+                $getQuantity = "SELECT Quantity FROM drinkTransaction";
+                $connectToConn = oci_parse($conn, $getQuantity);
+                $resultQuantity = oci_execute($connectToConn);
+
+                // Store results into the drinkQuantities array
+                if ($resultQuantity) {
+                    while ($row = oci_fetch_array($connectToConn, OCI_RETURN_NULLS+OCI_ASSOC)) {
+                        array_push($drinkQuantities, $row['QUANTITY']);
+                    }
+                }
+
+                // Handles the transaction and stores the information in the database
                 if (isset($_POST['submit'])) {
                     //Getting the total amount that the customer paid
-                    $total = ($_POST['pint'] * 8) + ($_POST['domestic'] * 7) + ($_POST['nonalc'] * 6) +
-                    ($_POST['liquor'] * 10) + ($_POST['hwine'] * 10) + ($_POST['pwine'] * 12) + ($_POST['malt10'] * 20) +
-                    ($_POST['malt15'] * 25) + ($_POST['juice'] * 6) + ($_POST['pop'] * 4);
+                    $total = ($_POST['pint'] * $costPint) + ($_POST['domestic'] * $costDomestic) + ($_POST['nonalc'] * $costNonAlc) +
+                    ($_POST['liquor'] * $costLiquor) + ($_POST['hwine'] * $costHWine) + ($_POST['pwine'] * $costPWine) + ($_POST['malt10'] * $costSingleMalt10) +
+                    ($_POST['malt15'] * $costSingleMalt15) + ($_POST['juice'] * $costJuice) + ($_POST['pop'] * $costPop);
 
                     //validating if payment was sufficient
                     if ($_POST['amountReceived'] >= $total) {
-                        if ($_POST['pint'] != ""){
-                            $currentCost = $costPint * $_POST['pint'];
-                            $sumPint += $currentCost;
-                            $sumTotal += $sumPint;
+                        $currentCost = 0;
+                        for ($i = 0; $i < count($idAndName); $i++){
+                            $amount = $_POST[$idAndName[$i]];
+                            $drinkPrice = ${$drinkNamesVar[array_search($idAndName[$i], $idAndName)]};
+                            if ($amount != "" ){
+                                $currentCost += $amount * $drinkPrice;
+                                $currentAmount = $amount + $drinkQuantities[$i];
+
+                                // Updating data into database
+                                $sql = "UPDATE drinkTransaction SET Quantity = $currentAmount WHERE DrinkId = $i";
+                                $stid = oci_parse($conn, $sql);
+                            }
+                            // Execute the prepared statement
+                            $result = oci_execute($stid);
                         }
-                        if ($_POST['domestic'] != ""){
-                            $currentCost = $costDomestic * $_POST['domestic'];
-                            $sumDomestic += $currentCost;
-                            $sumTotal += $sumDomestic;
-                        }
-                        if ($_POST['nonalc'] != ""){
-                            $currentCost = $costNonAlc * $_POST['nonalc'];
-                            $sumNonAlc += $currentCost;
-                            $sumTotal += $sumNonAlc;
-                        }
-                        if ($_POST['liquor'] != ""){
-                            $currentCost = $costLiquor * $_POST['liquor'];
-                            $sumLiquor += $currentCost;
-                            $sumTotal += $sumLiquor;
-                        }
-                        if ($_POST['hwine'] != ""){
-                            $currentCost = $costHWine * $_POST['hwine'];
-                            $sumHWine += $currentCost;
-                            $sumTotal += $sumHWine;
-                        }
-                        if ($_POST['pwine'] != ""){
-                            $currentCost = $costPWine * $_POST['pwine'];
-                            $sumPWine += $currentCost;
-                            $sumTotal += $sumPWine;
-                        }
-                        if ($_POST['malt10'] != ""){
-                            $currentCost = $costSingleMalt10 * $_POST['malt10'];
-                            $sumSingleMalt10 += $currentCost;
-                            $sumTotal += $sumSingleMalt10;
-                        }
-                        if ($_POST['malt15'] != ""){
-                            $currentCost = $costSingleMalt15 * $_POST['malt15'];
-                            $sumSingleMalt15 += $currentCost;
-                            $sumTotal += $sumSingleMalt15;
-                        }
-                        if ($_POST['juice'] != ""){
-                            $currentCost = $costJuice * $_POST['juice'];
-                            $sumJuice += $currentCost;
-                            $sumTotal += $sumJuice;
-                        }
-                        if ($_POST['pop'] != ""){
-                            $currentCost = $costPop * $_POST['pop'];
-                            $sumPop += $currentCost;
-                            $sumTotal += $sumPop;
-                        }
-                        $diffPayment = $_POST['amountReceived'] - $sumTotal;
+                        $diffPayment = $_POST['amountReceived'] - $total;
                         echo "<p style='color: green'>Change: $" . $diffPayment . "</p>";
                     }
                     else{
-                        $diffPayment = $_POST['amountReceived'] - $total;
-                        echo "<p style='color: red'>Payment insufficient by $" . $diffPayment . "</p>";
+                            $diffPayment = $_POST['amountReceived'] - $total;
+                            echo "<p style='color: red'>Payment insufficient by: $" . $diffPayment . "</p>";
                     }
                 }
             ?>
@@ -177,9 +149,9 @@
             <caption class="tableCaption"></caption>
             <tr>
                 <th> </th>
-                <th>Pint</th>
                 <?php
-                    for ($i = 1; $i < count($drinkNames); $i++){
+                    $drinkNames = ["Pint", "Domestic", "NonAlc", "Liquor", "Hwine", "PWine", "SingleMalt10", "SingleMalt15", "Juice", "Pop"];
+                    for ($i = 0; $i < count($drinkNames); $i++){
                         echo "<th>" . $drinkNames[$i] . "</th>";
                     }
                 ?>
@@ -187,135 +159,31 @@
             <tr>
                 <th>Amount &dollar;</th>
                 <?php
-                    //draft pint
-                    if (isset($_COOKIE[$cookie_draft])){
-                        $sumPint += $_COOKIE[$cookie_draft];
-                        setcookie($cookie_draft, $sumPint);
-                    }
-                    else{
-                        $sumPint = 0;
-                        setcookie($cookie_draft, $sumPint);
-                        $_COOKIE[$cookie_draft] = $sumPint;
-                    }
-                    //domestic beer
-                    if (isset($_COOKIE[$cookie_domestic])){
-                        $sumDomestic += $_COOKIE[$cookie_domestic];
-                        setcookie($cookie_domestic, $sumDomestic);
-                    }
-                    else{
-                        $sumDomestic = 0;
-                        setcookie($cookie_domestic, $sumDomestic);
-                        $_COOKIE[$cookie_domestic] = $sumDomestic;
-                    }
-                    //non-alcoholic drink
-                    if (isset($_COOKIE[$cookie_nonAlc])){
-                        $sumNonAlc += $_COOKIE[$cookie_nonAlc];
-                        setcookie($cookie_nonAlc, $sumNonAlc);
-                    }
-                    else{
-                        $sumNonAlc = 0;
-                        setcookie($cookie_nonAlc, $sumNonAlc);
-                        $_COOKIE[$cookie_nonAlc] = $sumNonAlc;
-                    }
-                    //liquor
-                    if (isset($_COOKIE[$cookie_liquor])){
-                        $sumLiquor += $_COOKIE[$cookie_liquor];
-                        setcookie($cookie_liquor, $sumLiquor);
-                    }
-                    else{
-                        $sumLiquor = 0;
-                        setcookie($cookie_liquor, $sumLiquor);
-                        $_COOKIE[$cookie_liquor] = $sumLiquor;
-                    }
-                    //House wine
-                    if (isset($_COOKIE[$cookie_hwine])){
-                        $sumHWine += $_COOKIE[$cookie_hwine];
-                        setcookie($cookie_hwine, $sumHWine);
-                    }
-                    else{
-                        $sumHWine = 0;
-                        setcookie($cookie_hwine, $sumHWine);
-                        $_COOKIE[$cookie_hwine] = $sumHWine;
-                    }
-                    //Premium wine
-                    if (isset($_COOKIE[$cookie_pwine])){
-                        $sumPWine += $_COOKIE[$cookie_pwine];
-                        setcookie($cookie_pwine, $sumPWine);
-                    }
-                    else{
-                        $sumPWine = 0;
-                        setcookie($cookie_pwine, $sumPWine);
-                        $_COOKIE[$cookie_pwine] = $sumPWine;
-                    }
-                    //Single malt 10
-                    if (isset($_COOKIE[$cookie_singlemalt10])){
-                        $sumSingleMalt10 += $_COOKIE[$cookie_singlemalt10];
-                        setcookie($cookie_singlemalt10, $sumSingleMalt10);
-                    }
-                    else{
-                        $sumSingleMalt10 = 0;
-                        setcookie($cookie_singlemalt10, $sumSingleMalt10);
-                        $_COOKIE[$cookie_singlemalt10] = $sumSingleMalt10;
-                    }
-                    //Single malt 15
-                    if (isset($_COOKIE[$cookie_singlemalt15])){
-                        $sumSingleMalt15 += $_COOKIE[$cookie_singlemalt15];
-                        setcookie($cookie_singlemalt15, $sumSingleMalt15);
-                    }
-                    else{
-                        $sumSingleMalt15 = 0;
-                        setcookie($cookie_singlemalt15, $sumSingleMalt15);
-                        $_COOKIE[$cookie_singlemalt15] = $sumSingleMalt15;
-                    }
-                    //Juice
-                    if (isset($_COOKIE[$cookie_juice])){
-                        $sumJuice += $_COOKIE[$cookie_juice];
-                        setcookie($cookie_juice, $sumJuice);
-                    }
-                    else{
-                        $sumJuice = 0;
-                        setcookie($cookie_juice, $sumJuice);
-                        $_COOKIE[$cookie_juice] = $sumJuice;
-                    }
-                    //Pop
-                    if (isset($_COOKIE[$cookie_pop])){
-                        $sumPop += $_COOKIE[$cookie_pop];
-                        setcookie($cookie_pop, $sumPop);
-                    }
-                    else{
-                        $sumPop = 0;
-                        setcookie($cookie_pop, $sumPop);
-                        $_COOKIE[$cookie_pop] = $sumPop;
-                    }
-
-                    $drinkSums = array($sumPint, $sumDomestic, $sumNonAlc, $sumLiquor, 
-                    $sumHWine, $sumPWine, $sumSingleMalt10, $sumSingleMalt15, $sumJuice, $sumPop);
-
-                    foreach($drinkSums as $value){
-                        echo "<td>" . $value . "</td>";
+                    
+                    $drinksAmount = updatedDrinkQuantity();
+                    $sumDrinks = [];
+                    // Display the amount of drinks sold
+                    for ($i = 0; $i < count($drinksAmount); $i++){
+                        $currentSum = $prices[$i] * $drinksAmount[$i];
+                        echo "<td>" . $currentSum . "</td>";
+                        array_push($sumDrinks, $currentSum);
                     }
                 ?>
             </tr>
             <tr>
                     <th>Quantity</th>
                     <?php
-                        for ($i = 0; $i < count($prices); $i++){
-                            echo "<td>" . $drinkSums[$i]/$prices[$i] . "</td>";
+                        $drinkQuantities = updatedDrinkQuantity();
+                        // Display the quantity of drinks sold
+                        for ($i = 0; $i < count($drinkQuantities); $i++){
+                            echo "<td>" . $drinkQuantities[$i] . "</td>";
                         }
                     ?>
             </tr>
         </table>
 
         <?php
-            if (isset($_COOKIE[$cookie_sales])){
-                $sumTotalSales = $_COOKIE[$cookie_sales] + $sumTotal;
-                setcookie($cookie_sales, $sumTotalSales);
-            }
-            else{
-                $sumTotalSales = 0;
-                setcookie($cookie_sales, $sumTotalSales);
-                $_COOKIE[$cookie_sales] = $sumTotalSales;
-            }
+            $sumTotalSales = array_sum($sumDrinks);
             echo "<p style='text-align:center;font-weight:600;'> Total amount: $" . $sumTotalSales . "</p>";
         ?>
     </div>
@@ -327,20 +195,15 @@
 
     <?php
         if (isset($_POST['reset'])) {
-            setcookie($cookie_draft, 0);
-            setcookie($cookie_domestic, 0);
-            setcookie($cookie_nonAlc, 0);
-            setcookie($cookie_liquor, 0);
-            setcookie($cookie_hwine, 0);
-            setcookie($cookie_pwine, 0);
-            setcookie($cookie_singlemalt10, 0);
-            setcookie($cookie_singlemalt15, 0);
-            setcookie($cookie_juice, 0);
-            setcookie($cookie_pop, 0);
-            setcookie($cookie_sales, 0);
+            $sql = "UPDATE drinkTransaction SET Quantity = 0";
+            $stid = oci_parse($conn, $sql);
+            $result = oci_execute($stid);   
+            if ($result) {
+                // Redirect to the same page to refresh it
+                header("Location: ".$_SERVER['PHP_SELF']);
+                exit();
+            }
         }
-        echo "<p class='resetNote'>Please click the Reset button <span class='italic'>twice</span> to comfirm data reset</p>";
-        echo "<p id='count'></p>"
 
     ?>
     <footer>
@@ -348,3 +211,4 @@
     </footer>
 </body>
 </html>
+
